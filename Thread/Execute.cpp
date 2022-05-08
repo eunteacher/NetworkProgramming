@@ -1,44 +1,50 @@
 #include <iostream>
 #include <thread>
-#include <Windows.h>
 using namespace std;
 
-// 쓰레드를 할당 받아 진행하는 함수
-// 메인 쓰레드와는 독립된 새로운 쓰레드이므로 병렬로 진행
-// 함수가 끝나는 것과 동시에 쓰레드는 종료
-DWORD __stdcall ThreadRunner(LPVOID IpParameter)
+void Fun1()
 {
-	int* arg;
-	int count; // 반복문을 실행할 횟수
+	for (int i = 0; i < 10; i++)
+		cout << "Fun1 " << i << "번째 호출" << '\n';
+}
 
-	count = 3;
-	arg = (int*)IpParameter;
+void Fun2()
+{
+	for (int i = 0; i < 10; i++)
+		cout << "Fun2 " << i << "번째 호출" << '\n';
+}
 
-	// 무한 루프를 돌며 작업을 진행한다. 이 함수는 새로운 쓰레드이므로 무한 루프가 메인 쓰레드에 영향을 끼치지 않는다.
-	while (count-- > 0)
-		cout << *arg << " " << "ThreadRunner Called" << '\n';
+void ParameterFun1(int a)
+{
+	for (int i = 0; i < 5; i++)
+		cout << "ParameterFun1 " << a + i << '\n';
+}
 
-	return 0;
+void ParameterFun2(int a, int b)
+{
+	for (int i = 0; i < 5; i++)
+		cout << "ParameterFun2 " << a + b + i << '\n';
 }
 
 int main()
 {
-	unsigned long threadId;
-	HANDLE handleThread[5];
-	int arr[5] = { 0, };
-	for (int i = 0; i < 5; i++)
-	{
-		arr[i] = i;
-		// 쓰레드 생성
-		// 병렬로 작업할 쓰레드를 5개 생성하고, 매개변수로 arr를 입력한다.
-		// 5개 쓰레드가 모두 ThreadRunner 함수로 지정되었지만, 5개의 서로 다른 ThreadRunner 함수가 호출된다고 생각하면 된다.
-		handleThread[i] = CreateThread(0, 0, ThreadRunner, &arr[i], 0, &threadId); // 쓰레드 생성
-	}
+	thread t1(Fun1);
+	thread t2(Fun2);
+	// join() : 쓰레드가 종료되면 리턴
+	t1.join();
+	t2.join();
+	thread t3(Fun1);
+	thread t4(Fun2);
+	// detach() : 메인 쓰레드와 독립적으로 실행
+	t3.detach();
+	t4.detach();
 
-	for (int i = 0; i < 5; i++)
-		cout << "Main Thread Called " << '\n';
-	// 생성된 모든 쓰레드가 종료되기를 기다린다.
-	WaitForMultipleObjects(5, handleThread, TRUE, INFINITE);
+	// 쓰레드 매개변수 전달
+	// 최대 4개까지 전달 가능
+	thread t5(ParameterFun1, 1);
+	t5.join();
+	thread t6(ParameterFun2, 1, 2);
+	t6.join();
 
 	return 0;
 }
